@@ -20,7 +20,6 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
 
-    # 🔥 Ensure 'sub' is a string (important!)
     if "sub" in to_encode:
         to_encode["sub"] = str(to_encode["sub"])
 

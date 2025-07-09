@@ -20,8 +20,8 @@ class UpdateJobs(BaseModel):
     skills_required: Optional[List[str]]
 
 class ShowJobs(JobBase):
-    id: int
-    posted_by: int
+    # id: int
+    # posted_by: int
 
     class Config:
         orm_mode = True
