@@ -18,17 +18,22 @@ def get_db():
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(status_code=401, detail="Invalid credentials")
     try:
+        print("TOKEN:", token)
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
+        print("PAYLOAD:", payload)
+        user_id = int(payload.get("sub"))
+    except (JWTError, ValueError, TypeError) as e:
+        print("JWT ERROR:", e)
         raise credentials_exception
 
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
+        print("USER NOT FOUND")
         raise credentials_exception
+    print("AUTHENTICATED USER:", user.email)
     return user
+
+
 
 def require_role(role: str):
     def checker(user: User = Depends(get_current_user)):
