@@ -1,43 +1,36 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from sqlalchemy.orm import Session
-from app.core.dependencies import get_db, get_current_user
-from app.schemas.application import ApplicationResponse
-from app.repository.application import create_application
-import shutil
 import os
-import uuid
+from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
+from app.models.application import Application
+from app.schemas.application import ApplicationCreate, ApplicationUpdateStatus
+from pyresparser import ResumeParser
 
-router = APIRouter(prefix="/applications", tags=["Applications"])
 
-UPLOAD_DIR = "app/uploads/resumes"
+def create_application(db: Session, applicant_id: int, application: ApplicationCreate):
+    parsed_resume = None
 
-@router.post("/upload", response_model=ApplicationResponse)
-async def upload_resume(
-    job_id: int = Form(...),
-    cover_letter: str = Form(...),
-    resume: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    # Ensure upload directory exists
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    if application.resume_file_path:
+        file_path = application.resume_file_path
 
-    # Save file to disk
-    file_extension = os.path.splitext(resume.filename)[1]
-    filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
+        if not os.path.isfile(file_path):
+            raise HTTPException(status_code=400, detail="Resume file not found")
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(resume.file, buffer)
+        try:
+            parsed_resume = ResumeParser(file_path).get_extracted_data()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to parse resume: {str(e)}")
 
-    # Create application
-    application_data = {
-        "job_id": job_id,
-        "cover_letter": cover_letter,
-        "resume_file_path": file_path
-    }
-
-    return create_application(db, current_user.id, application=type("AppCreate", (), application_data)())
+    new_application = Application(
+        job_id=application.job_id,
+        applicant_id=applicant_id,
+        resume_file_path=application.resume_file_path,
+        cover_letter=application.cover_letter,
+        parsed_resume=parsed_resume,
+    )
+    db.add(new_application)
+    db.commit()
+    db.refresh(new_application)
+    return new_application
 
 
 def get_application_detail(db: Session, app_id: int):
@@ -66,7 +59,7 @@ def update_application_status(db: Session, app_id: int, status_data: Application
     return application
 
 
-def delete_application(db: Session, app_id: int, current_user_id: int, is_admin=False):
+def delete_application(db: Session, app_id: int, current_user_id: int, is_admin: bool = False):
     application = db.query(Application).filter(Application.id == app_id).first()
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
