@@ -5,6 +5,7 @@ from typing import List
 from app.schemas.application import ApplicationCreate, ApplicationResponse, ApplicationUpdateStatus
 from app.core.dependencies import get_db, get_current_user, require_role
 from app.repository import application as application_repo
+from app.utils.resume_parser import ResumeParser  # Updated import
 import shutil
 import os
 import uuid
@@ -20,12 +21,23 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/create/", response_model=ApplicationResponse)
 def apply_for_job(
-    job_id: int = Form(...),
-    cover_letter: str = Form(...),
-    resume: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user=Depends(require_role("applicant"))
+        job_id: int = Form(...),
+        cover_letter: str = Form(...),
+        resume: UploadFile = File(...),
+        db: Session = Depends(get_db),
+        current_user=Depends(require_role("applicant"))
 ):
+    # Validate file type
+    allowed_extensions = {'.pdf', '.docx', '.doc'}
+    file_extension = os.path.splitext(resume.filename)[1].lower()
+
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF and DOCX files are supported"
+        )
+
+    # Generate a unique filename and save the file
     filename = f"{uuid.uuid4()}_{resume.filename}"
     file_path = os.path.join(UPLOAD_DIR, filename)
 
@@ -35,14 +47,36 @@ def apply_for_job(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save resume: {str(e)}")
 
+    # Parse resume with improved parser
+    parsed_resume = None
+    try:
+        parser = ResumeParser(file_path)
+        parsed_resume = parser.get_extracted_data()
+
+        # Check if parsing failed
+        if "error" in parsed_resume:
+            print(f"Resume parsing warning: {parsed_resume['error']}")
+            # Don't fail the entire request, just log the issue
+            parsed_resume = {"parsing_error": parsed_resume["error"]}
+
+    except Exception as e:
+        print(f"Resume parsing failed: {str(e)}")
+        # Don't fail the entire request, just set parsed_resume to None
+        parsed_resume = {"parsing_error": str(e)}
+
+    # Create Pydantic object and pass to repo
     application_data = ApplicationCreate(
         job_id=job_id,
         cover_letter=cover_letter,
         resume_file_path=file_path
     )
 
-    return application_repo.create_application(db, current_user.id, application_data)
-
+    return application_repo.create_application(
+        db=db,
+        applicant_id=current_user.id,
+        application=application_data,
+        parsed_resume=parsed_resume
+    )
 
 @router.get("/{app_id}/", response_model=ApplicationResponse)
 def get_application(app_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):

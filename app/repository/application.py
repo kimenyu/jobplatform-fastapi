@@ -3,34 +3,29 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.application import Application
 from app.schemas.application import ApplicationCreate, ApplicationUpdateStatus
-from pyresparser import ResumeParser
+from typing import Optional
 
-
-def create_application(db: Session, applicant_id: int, application: ApplicationCreate):
-    parsed_resume = None
-
-    if application.resume_file_path:
-        file_path = application.resume_file_path
-
-        if not os.path.isfile(file_path):
-            raise HTTPException(status_code=400, detail="Resume file not found")
-
-        try:
-            parsed_resume = ResumeParser(file_path).get_extracted_data()
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to parse resume: {str(e)}")
+def create_application(
+    db: Session,
+    applicant_id: int,
+    application: ApplicationCreate,
+    parsed_resume: Optional[dict] = None
+):
+    if not os.path.isfile(application.resume_file_path):
+        raise HTTPException(status_code=400, detail="Resume file not found")
 
     new_application = Application(
         job_id=application.job_id,
         applicant_id=applicant_id,
         resume_file_path=application.resume_file_path,
         cover_letter=application.cover_letter,
-        parsed_resume=parsed_resume,
+        parsed_resume=parsed_resume,  # use already parsed data
     )
     db.add(new_application)
     db.commit()
     db.refresh(new_application)
     return new_application
+
 
 
 def get_application_detail(db: Session, app_id: int):
