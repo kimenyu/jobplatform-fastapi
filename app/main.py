@@ -5,6 +5,8 @@ from app.routes import application
 from app.database.session import engine
 from app.database.base import Base
 from app.models import user  # make sure to import all models here
+from dotenv import load_dotenv
+load_dotenv()  # ✅ This loads the .env file into os.environ
 
 Base.metadata.create_all(bind=engine)
 

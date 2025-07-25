@@ -34,6 +34,9 @@ python-dotenv==1.1.1
 python-jose==3.5.0
 python-multipart==0.0.20
 PyYAML==6.0.2
+PyPDF2==3.0.1
+python-docx==1.1.2
+pdfplumber==0.10.3
 rich==14.0.0
 rich-toolkit==0.14.7
 rsa==4.9.1

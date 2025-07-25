@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database.session import SessionLocal
 from app.models.user import User
-from app.core.security import SECRET_KEY, ALGORITHM
+from app.core.security import secret_key, ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -19,7 +19,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     credentials_exception = HTTPException(status_code=401, detail="Invalid credentials")
     try:
         print("TOKEN:", token)
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
         print("PAYLOAD:", payload)
         user_id = int(payload.get("sub"))
     except (JWTError, ValueError, TypeError) as e:
