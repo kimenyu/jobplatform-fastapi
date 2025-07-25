@@ -4,13 +4,17 @@ from app.routes import job
 from app.routes import application
 from app.database.session import engine
 from app.database.base import Base
-from app.models import user  # make sure to import all models here
+from app.models import user
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
-load_dotenv()  # ✅ This loads the .env file into os.environ
+load_dotenv()
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.mount("/docs", StaticFiles(directory="docs", html=True), name="docs")
 
 @app.get("/")
 async def home():

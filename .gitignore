@@ -1,4 +1,4 @@
-env
-jobboard.db
 .env
+.idea/
+jobboard.db
 uploads/resumes/
