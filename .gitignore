@@ -2,3 +2,6 @@
 .idea/
 jobboard.db
 uploads/resumes/
+__pycache__/
+*.pyc
+env
