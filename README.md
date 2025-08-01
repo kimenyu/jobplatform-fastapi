@@ -96,7 +96,7 @@ Sample endpoints:
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/yourusername/jobplatformfastapi.git
+git clone https://github.com/kimenyu/jobplatform-fastapi.git
 cd jobplatformfastapi
 python -m venv env
 source env/bin/activate
@@ -146,7 +146,7 @@ Sample OpenAI resume output (for uploaded file):
 ## 👨‍💻 Author
 
 **Joseph Njoroge**  
-Fullstack Software Engineer – Passionate about backend systems, AI-powered applications, and solving real-world problems with code.
+Fullstack Software Developer – Passionate about backend systems, AI-powered applications, and solving real-world problems with code.
 
 > Inspired by innovation. Built with excellence. Driven by learning.
 
