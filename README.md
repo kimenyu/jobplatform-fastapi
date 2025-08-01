@@ -57,7 +57,7 @@ This platform integrates **OpenAI's GPT API** to parse and understand resumes us
 | AI Integration| OpenAI (GPT-4)    |
 | File Uploads  | FastAPI UploadFile |
 | Resume Parsing| GPT + `python-docx`/`pdfplumber` |
-| Container     | Optional: Docker  |
+| Container     | Docker  |
 
 ---
 
