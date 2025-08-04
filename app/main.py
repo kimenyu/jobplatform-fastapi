@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 
 from app.api import auth
-from app.routes import job, application, review
+from app.routes import job, application, review, userprofile
 from app.database.session import engine
 from app.database.base import Base
 
@@ -20,10 +20,10 @@ app = FastAPI()
 async def home():
     return {"message": "It is working"}
 
-# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads") // will change if not using open ai to parse the resumes
 
 # Register routers
 app.include_router(auth.router)
 app.include_router(job.router)
 app.include_router(application.router)
 app.include_router(review.router)
+app.include_router(userprofile.router)
