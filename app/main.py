@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 
 from app.api import auth
-from app.routes import job, application, review, userprofile, applicationwithresumeparser
+from app.routes import job, review, userprofile, applicationwithresumeparser
 from app.database.session import engine
 from app.database.base import Base
 
@@ -24,7 +24,6 @@ async def home():
 # Register routers
 app.include_router(auth.router)
 app.include_router(job.router)
-# app.include_router(application.router)
 app.include_router(review.router)
 app.include_router(userprofile.router)
 app.include_router(applicationwithresumeparser.router)

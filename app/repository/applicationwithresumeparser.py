@@ -1,240 +1,263 @@
+import os
+import shutil
+from typing import Dict, List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, desc
-from fastapi import HTTPException, status
-from typing import List, Optional
+from fastapi import HTTPException, UploadFile
 from app.models.application import Application
 from app.models.resume import Resume
-from app.schemas.application import ApplicationCreate, ApplicationUpdateStatus
-import os
+from app.models.job import Job
+from app.models.user import User
+from app.utils.resume_parser import ResumeParser
 
 
-def create_application(
-        db: Session,
-        applicant_id: int,
-        application: ApplicationCreate,
-        resume_id: Optional[int] = None
-):
-    """Create a new job application"""
-    try:
-        # If resume_id is provided, get the resume file path
-        resume_file_path = None
-        parsed_resume = None
+class ApplicationWithResumeRepository:
+    def __init__(self, db: Session):
+        self.db = db
 
-        if resume_id:
-            resume = db.query(Resume).filter(
-                and_(
-                    Resume.id == resume_id,
-                    Resume.applicant_id == applicant_id
-                )
-            ).first()
+    def create_application_with_resume(
+            self,
+            job_id: int,
+            applicant_id: int,
+            resume_file: UploadFile,
+            cover_letter: Optional[str] = None,
+            upload_dir: str = "uploads/resumes"
+    ) -> Dict:
+        """Create application and parse resume in one operation"""
 
-            if not resume:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Resume not found or not authorized"
-                )
+        # Verify job exists
+        job = self.db.query(Job).filter(Job.id == job_id).first()
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
 
-            resume_file_path = resume.file_path
-            parsed_resume = resume.parsed_data
+        # Verify user exists
+        user = self.db.query(User).filter(User.id == applicant_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-            # Verify file still exists
-            if not os.path.isfile(resume_file_path):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Resume file no longer exists"
-                )
-
-        elif application.resume_file_path:
-            # Legacy support for direct file path
-            if not os.path.isfile(application.resume_file_path):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Resume file not found"
-                )
-            resume_file_path = application.resume_file_path
-
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail="Either resume_id or resume_file_path must be provided"
-            )
-
-        new_application = Application(
-            job_id=application.job_id,
-            applicant_id=applicant_id,
-            resume_file_path=resume_file_path,
-            cover_letter=application.cover_letter,
-            parsed_resume=parsed_resume,
-        )
-
-        db.add(new_application)
-        db.commit()
-        db.refresh(new_application)
-        return new_application
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete application: {str(e)}"
-        )
-
-
-def get_applications_by_status(
-        db: Session,
-        status: str,
-        skip: int = 0,
-        limit: int = 20
-) -> List[Application]:
-    """Get applications by status (recruiter/admin only)"""
-    return db.query(Application).filter(
-        Application.status == status
-    ).order_by(desc(Application.created_at)).offset(skip).limit(limit).all()
-
-
-def search_applications(
-        db: Session,
-        job_id: Optional[int] = None,
-        applicant_id: Optional[int] = None,
-        status: Optional[str] = None,
-        field: Optional[str] = None,
-        skills: Optional[List[str]] = None,
-        skip: int = 0,
-        limit: int = 20
-) -> dict:
-    """Advanced search for applications"""
-    try:
-        query = db.query(Application)
-
-        # Apply basic filters
-        if job_id:
-            query = query.filter(Application.job_id == job_id)
-        if applicant_id:
-            query = query.filter(Application.applicant_id == applicant_id)
-        if status:
-            query = query.filter(Application.status == status)
-
-        # Apply resume-based filters
-        if field:
-            query = query.filter(
-                Application.parsed_resume['field'].astext.ilike(f"%{field}%")
-            )
-
-        if skills:
-            skill_conditions = []
-            for skill in skills:
-                skill_conditions.append(
-                    Application.parsed_resume['skills'].astext.ilike(f"%{skill}%")
-                )
-            if skill_conditions:
-                from sqlalchemy import or_
-                query = query.filter(or_(*skill_conditions))
-
-        # Get total count
-        total = query.count()
-
-        # Apply pagination
-        applications = query.order_by(desc(Application.created_at)).offset(skip).limit(limit).all()
-
-        return {
-            "applications": applications,
-            "total": total,
-            "page": (skip // limit) + 1 if limit > 0 else 1,
-            "pages": (total + limit - 1) // limit if limit > 0 else 1
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to search applications: {str(e)}"
-        )
-
-
-
-def get_application_by_id(db: Session, application_id: int) -> Optional[Application]:
-    """Get application by ID"""
-    return db.query(Application).filter(Application.id == application_id).first()
-
-
-def get_user_applications(
-        db: Session,
-        applicant_id: int,
-        skip: int = 0,
-        limit: int = 10
-) -> List[Application]:
-    """Get all applications for a specific user"""
-    return db.query(Application).filter(
-        Application.applicant_id == applicant_id
-    ).order_by(desc(Application.created_at)).offset(skip).limit(limit).all()
-
-
-def get_job_applications(
-        db: Session,
-        job_id: int,
-        skip: int = 0,
-        limit: int = 20
-) -> List[Application]:
-    """Get all applications for a specific job"""
-    return db.query(Application).filter(
-        Application.job_id == job_id
-    ).order_by(desc(Application.created_at)).offset(skip).limit(limit).all()
-
-
-def update_application_status(
-        db: Session,
-        application_id: int,
-        status_update: ApplicationUpdateStatus
-) -> Optional[Application]:
-    """Update application status (recruiter/admin only)"""
-    try:
-        application = db.query(Application).filter(
-            Application.id == application_id
+        # Check if user already applied for this job
+        existing_application = self.db.query(Application).filter(
+            Application.job_id == job_id,
+            Application.applicant_id == applicant_id
         ).first()
 
+        if existing_application:
+            raise HTTPException(status_code=400, detail="You have already applied for this job")
+
+        try:
+            # Create upload directory if it doesn't exist
+            os.makedirs(upload_dir, exist_ok=True)
+
+            # Generate unique filename
+            file_extension = resume_file.filename.split('.')[-1]
+            unique_filename = f"resume_{applicant_id}_{job_id}.{file_extension}"
+            file_path = os.path.join(upload_dir, unique_filename)
+
+            # Save the uploaded file
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(resume_file.file, buffer)
+
+            # Parse the resume
+            parser = ResumeParser(file_path)
+            parsed_data = parser.get_extracted_data()
+
+            # Check if parsing was successful
+            if "error" in parsed_data:
+                # Clean up the uploaded file on parsing error
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                raise HTTPException(status_code=422, detail=f"Resume parsing failed: {parsed_data['error']}")
+
+            # Create resume record
+            resume = Resume(
+                applicant_id=applicant_id,
+                file_path=file_path,
+                parsed_data=parsed_data
+            )
+            self.db.add(resume)
+            self.db.flush()  # Get the resume ID
+
+            # Create application record
+            application = Application(
+                job_id=job_id,
+                applicant_id=applicant_id,
+                resume_file_path=file_path,
+                cover_letter=cover_letter,
+                parsed_resume=parsed_data,
+                status="pending"
+            )
+            self.db.add(application)
+
+            # Commit both records
+            self.db.commit()
+            self.db.refresh(application)
+            self.db.refresh(resume)
+
+            return {
+                "application_id": application.id,
+                "resume_id": resume.id,
+                "parsed_data": parsed_data,
+                "status": "success",
+                "message": "Application submitted and resume parsed successfully"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            # Clean up uploaded file on error
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            raise HTTPException(status_code=500, detail=f"Failed to process application: {str(e)}")
+
+    def get_application_with_parsed_resume(self, application_id: int, user_id: Optional[int] = None) -> Optional[Dict]:
+        """Get application with parsed resume data"""
+        query = self.db.query(Application).filter(Application.id == application_id)
+
+        if user_id:
+            query = query.filter(Application.applicant_id == user_id)
+
+        application = query.first()
         if not application:
             return None
 
-        application.status = status_update.status
+        return {
+            "id": application.id,
+            "job_id": application.job_id,
+            "applicant_id": application.applicant_id,
+            "status": application.status,
+            "cover_letter": application.cover_letter,
+            "parsed_resume": application.parsed_resume,
+            "created_at": application.created_at,
+            "job_title": application.job.title if application.job else None,
+            "applicant_name": application.applicant.full_name if application.applicant else None
+        }
 
-        db.commit()
-        db.refresh(application)
-        return application
+    def get_user_applications_with_resumes(self, user_id: int) -> List[Dict]:
+        """Get all applications for a user with parsed resume data"""
+        applications = self.db.query(Application).filter(
+            Application.applicant_id == user_id
+        ).all()
 
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to update application status: {str(e)}"
-        )
+        return [
+            {
+                "id": app.id,
+                "job_id": app.job_id,
+                "job_title": app.job.title if app.job else None,
+                "company_name": app.job.company_name if app.job else None,
+                "status": app.status,
+                "parsed_resume": app.parsed_resume,
+                "created_at": app.created_at
+            }
+            for app in applications
+        ]
 
+    def get_job_applications_with_resumes(self, job_id: int, employer_id: Optional[int] = None) -> List[Dict]:
+        """Get all applications for a job with parsed resume data"""
+        query = self.db.query(Application).filter(Application.job_id == job_id)
 
-def delete_application(db: Session, application_id: int, applicant_id: int) -> bool:
-    """Delete an application (applicant only, and only if pending)"""
-    try:
-        application = db.query(Application).filter(
-            and_(
-                Application.id == application_id,
-                Application.applicant_id == applicant_id
-            )
+        # If employer_id is provided, verify they own the job
+        if employer_id:
+            job = self.db.query(Job).filter(
+                Job.id == job_id,
+                Job.employer_id == employer_id
+            ).first()
+            if not job:
+                raise HTTPException(status_code=403, detail="Not authorized to view these applications")
+
+        applications = query.all()
+
+        return [
+            {
+                "id": app.id,
+                "applicant_id": app.applicant_id,
+                "applicant_name": app.applicant.full_name if app.applicant else None,
+                "applicant_email": app.applicant.email if app.applicant else None,
+                "status": app.status,
+                "cover_letter": app.cover_letter,
+                "parsed_resume": app.parsed_resume,
+                "created_at": app.created_at
+            }
+            for app in applications
+        ]
+
+    def update_application_status(self, application_id: int, new_status: str,
+                                  employer_id: Optional[int] = None) -> bool:
+        """Update application status"""
+        valid_statuses = ["pending", "reviewed", "accepted", "rejected"]
+        if new_status not in valid_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+
+        query = self.db.query(Application).filter(Application.id == application_id)
+
+        # If employer_id provided, verify they own the job
+        if employer_id:
+            query = query.join(Job).filter(Job.employer_id == employer_id)
+
+        application = query.first()
+        if not application:
+            return False
+
+        application.status = new_status
+        self.db.commit()
+        return True
+
+    def reparse_resume(self, application_id: int) -> Dict:
+        """Reparse an existing resume file"""
+        application = self.db.query(Application).filter(Application.id == application_id).first()
+        if not application or not application.resume_file_path:
+            raise HTTPException(status_code=404, detail="Application or resume file not found")
+
+        if not os.path.exists(application.resume_file_path):
+            raise HTTPException(status_code=404, detail="Resume file no longer exists")
+
+        try:
+            # Reparse the resume
+            parser = ResumeParser(application.resume_file_path)
+            parsed_data = parser.get_extracted_data()
+
+            if "error" in parsed_data:
+                raise HTTPException(status_code=422, detail=f"Resume parsing failed: {parsed_data['error']}")
+
+            # Update application with new parsed data
+            application.parsed_resume = parsed_data
+
+            # Update resume record if it exists
+            resume = self.db.query(Resume).filter(
+                Resume.applicant_id == application.applicant_id,
+                Resume.file_path == application.resume_file_path
+            ).first()
+
+            if resume:
+                resume.parsed_data = parsed_data
+
+            self.db.commit()
+
+            return {
+                "status": "success",
+                "message": "Resume reparsed successfully",
+                "parsed_data": parsed_data
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail=f"Failed to reparse resume: {str(e)}")
+
+    def delete_application(self, application_id: int, user_id: int) -> bool:
+        """Delete application and associated resume file"""
+        application = self.db.query(Application).filter(
+            Application.id == application_id,
+            Application.applicant_id == user_id
         ).first()
 
         if not application:
             return False
 
-        # Only allow deletion if application is still pending
-        if application.status != "pending":
-            raise HTTPException(
-                status_code=400,
-                detail="Cannot delete application that has been reviewed"
-            )
+        # Remove file if it exists
+        if application.resume_file_path and os.path.exists(application.resume_file_path):
+            try:
+                os.remove(application.resume_file_path)
+            except OSError:
+                pass  # File might be in use or already deleted
 
-        db.delete(application)
-        db.commit()
+        # Delete from database
+        self.db.delete(application)
+        self.db.commit()
         return True
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
