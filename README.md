@@ -1,41 +1,41 @@
-# 🧠 JobPlatformFastAPI
+#  JobPlatformFastAPI
 
 An intelligent, full-featured job platform built with **FastAPI** that connects **applicants** and **employers**, powered by AI-driven resume parsing using **OpenAI's GPT**. It features robust role-based authentication, job posting, application management, resume analysis, notifications, and user reviews.
 
 ---
-
 ## 🚀 Features
 
-### ✅ Core Functionality
+###  Core Functionality
 
-- 🔐 **Authentication & Authorization**
+-  **Authentication & Authorization**
   - Secure JWT-based login & registration
   - Role-specific access (Admin, Employer, Applicant)
 
-- 📋 **Job Management**
+-  **Job Management**
   - Employers can create, update, delete, and manage jobs
   - Applicants can browse and apply to jobs
 
-- 📄 **Resume Upload & Parsing**
+-  **Resume Upload & Parsing**
   - Applicants upload resumes in `.docx`/`.pdf`
   - Uses **OpenAI** to extract skills, experience, education, etc.
 
-- 🗂 **Application Tracking**
+-  **Application Tracking**
   - Admins and Employers can view all applications
   - Applicants can track and delete their own submissions
 
-- 🔔 **Notifications**
+-  **Notifications**
   - System-generated notifications for application events
 
-- ⭐ **Reviews**
+-  **Reviews**
   - Users can leave reviews for each other (1–5 star rating)
 
-- 💾 **Resume Intelligence**
+-  **Resume Intelligence(hybrid parsing)**
   - Automatically parses resume content using AI for analysis and searchability
+  - Parse resume using PyPDF2/python-docx
 
 ---
 
-## 🧠 Powered by AI
+##  Powered by AI
 
 This platform integrates **OpenAI's GPT API** to parse and understand resumes using natural language understanding. Traditional keyword extraction is replaced with contextual insights such as:
 
@@ -46,7 +46,7 @@ This platform integrates **OpenAI's GPT API** to parse and understand resumes us
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 | Layer         | Technology        |
 | ------------- | ----------------- |
@@ -61,7 +61,7 @@ This platform integrates **OpenAI's GPT API** to parse and understand resumes us
 
 ---
 
-## 🗂 Project Structure
+##  Project Structure
 
 ```
 app/
@@ -79,7 +79,7 @@ app/
 
 ---
 
-## 🧪 API Endpoints
+##  API Endpoints
 
 Sample endpoints:
 
@@ -93,7 +93,7 @@ Sample endpoints:
 
 ---
 
-## 📦 Installation
+##  Installation
 
 ```bash
 git clone https://github.com/kimenyu/jobplatform-fastapi.git
@@ -118,7 +118,7 @@ uvicorn app.main:app --reload
 
 ---
 
-## 📄 Sample Resume Parsing (AI)
+##  Sample Resume Parsing (AI)
 
 Sample OpenAI resume output (for uploaded file):
 
@@ -134,7 +134,7 @@ Sample OpenAI resume output (for uploaded file):
 
 ---
 
-## 🎯 Future Enhancements
+##  Future Enhancements
 
 - Advanced job matching algorithm using AI
 - Recommendation engine for skills/jobs
@@ -143,7 +143,7 @@ Sample OpenAI resume output (for uploaded file):
 
 ---
 
-## 👨‍💻 Author
+##  Author
 
 **Joseph Njoroge**  
 Fullstack Software Developer – Passionate about backend systems, AI-powered applications, and solving real-world problems with code.
@@ -152,6 +152,6 @@ Fullstack Software Developer – Passionate about backend systems, AI-powered ap
 
 ---
 
-## 📝 License
+##  License
 
 MIT License – feel free to build upon this project and improve it!
