@@ -3,7 +3,7 @@
 An intelligent, full-featured job platform built with **FastAPI** that connects **applicants** and **employers**, powered by AI-driven resume parsing using **OpenAI's GPT**. It features robust role-based authentication, job posting, application management, resume analysis, notifications, and user reviews.
 
 ---
-## 🚀 Features
+##  Features
 
 ###  Core Functionality
 
