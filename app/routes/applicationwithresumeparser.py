@@ -50,7 +50,7 @@ async def submit_application_with_resume(
             detail=f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
         )
 
-    # Validate file size (e.g., max 10MB)
+    # Validate file size
     if hasattr(resume_file, 'size') and resume_file.size and resume_file.size > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File size too large. Maximum 10MB allowed.")
 
