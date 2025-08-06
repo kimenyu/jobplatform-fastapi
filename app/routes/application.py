@@ -22,7 +22,6 @@ UPLOAD_DIR = "uploads/resumes"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-# ✅ Apply for a job (Applicant only)
 @router.post("/create/", response_model=ApplicationResponse)
 def apply_for_job(
     job_id: int = Form(...),
@@ -51,25 +50,21 @@ def apply_for_job(
     return application_repo.create_application(db, current_user.id, application_data)
 
 
-# ✅ Get application by ID
 @router.get("/{app_id}", response_model=ApplicationResponse)
 def get_application(app_id: int, db: Session = Depends(get_db)):
     return application_repo.get_application_detail(db, app_id)
 
 
-# ✅ Get applications by job (Admin or Employer)
 @router.get("/job/{job_id}", response_model=List[ApplicationResponse])
 def get_by_job(job_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     return application_repo.get_applications_by_job(db, job_id)
 
 
-# ✅ Get applications by current user
 @router.get("/me/", response_model=List[ApplicationResponse])
 def get_my_applications(db: Session = Depends(get_db), user=Depends(require_role("applicant"))):
     return application_repo.get_applications_by_user(db, user.id)
 
 
-# ✅ Update application status (Admin or Employer)
 @router.put("/{app_id}/status", response_model=ApplicationResponse)
 def update_status(
     app_id: int,
@@ -77,11 +72,9 @@ def update_status(
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
-    # You can enhance authorization here if needed
     return application_repo.update_application_status(db, app_id, status_data)
 
 
-# ✅ Delete an application
 @router.delete("/{app_id}")
 def delete_application(
     app_id: int,

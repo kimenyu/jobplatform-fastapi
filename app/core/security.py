@@ -10,7 +10,7 @@ secret_key = os.getenv("SECRET_KEY")
 print(f"The secret key is {secret_key}")
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 3000
+ACCESS_TOKEN_EXPIRE_MINUTES = 30000
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
