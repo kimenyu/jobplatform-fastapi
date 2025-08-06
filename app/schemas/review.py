@@ -1,4 +1,3 @@
-# schemas/review.py
 from pydantic import BaseModel, conint
 from typing import Optional
 from datetime import datetime

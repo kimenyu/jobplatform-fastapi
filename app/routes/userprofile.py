@@ -11,6 +11,8 @@ router = APIRouter(prefix="/profiles", tags=["profiles"])
 
 @router.post("/create", response_model=ShowUserProfile, status_code=status.HTTP_201_CREATED)
 def create_new_profile(userprofile: UserProfileCreate, db: Session=Depends(get_db), current_user: User=Depends(get_current_user)):
+    if current_user.role != "applicant":
+        raise HTTPException(status_code=403, detail="Only employers can post jobs")
     return create_profile(db, userprofile, current_user.id)
 
 @router.get("/details/{id}", response_model=ShowUserProfile, status_code=status.HTTP_200_OK)

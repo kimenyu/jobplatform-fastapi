@@ -15,7 +15,7 @@ class UserProfileCreate(UserProfileBase):
 
 
 class ShowUserProfile(UserProfileBase):
-    id: str
+    id: int
 
     class Config:
         orm_mode=True

@@ -16,6 +16,7 @@ def create_profile(db: Session, userprofile: UserProfileCreate, userID: int):
         github=userprofile.github,
         website=userprofile.website
     )
+
     db.add(new_profile)
     db.commit()
     db.refresh(new_profile)
