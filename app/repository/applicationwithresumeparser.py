@@ -127,7 +127,7 @@ class ApplicationWithResumeRepository:
             "parsed_resume": application.parsed_resume,
             "created_at": application.created_at,
             "job_title": application.job.title if application.job else None,
-            "applicant_name": application.applicant.full_name if application.applicant else None
+            "applicant_name": application.applicant.email if application.applicant else None
         }
 
     def get_user_applications_with_resumes(self, user_id: int) -> List[Dict]:
@@ -157,7 +157,7 @@ class ApplicationWithResumeRepository:
         if employer_id:
             job = self.db.query(Job).filter(
                 Job.id == job_id,
-                Job.employer_id == employer_id
+                Job.posted_by == employer_id
             ).first()
             if not job:
                 raise HTTPException(status_code=403, detail="Not authorized to view these applications")
@@ -168,7 +168,7 @@ class ApplicationWithResumeRepository:
             {
                 "id": app.id,
                 "applicant_id": app.applicant_id,
-                "applicant_name": app.applicant.full_name if app.applicant else None,
+                "applicant_name": app.applicant.email if app.applicant else None,
                 "applicant_email": app.applicant.email if app.applicant else None,
                 "status": app.status,
                 "cover_letter": app.cover_letter,
