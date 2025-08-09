@@ -87,7 +87,7 @@ Sample endpoints:
 - `POST /auth/login` – Authenticate and receive token
 - `POST /jobs/create` – Employer creates job (auth required)
 - `GET /jobs/all` – List all jobs
-- `POST /applications/create` – Apply for job (upload resume)
+- `POST /applications/submit` – Apply for job (upload resume)
 - `GET /applications/{id}` – View application detail
 - `POST /reviews/` – Submit review
 
@@ -114,6 +114,8 @@ Run the application:
 
 ```bash
 uvicorn app.main:app --reload
+or
+gunicorn -c app/config/gunicorn_conf.py app.main:app
 ```
 
 ---
