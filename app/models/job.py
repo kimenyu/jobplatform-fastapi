@@ -20,5 +20,7 @@ class Job(Base):
 
     applications = relationship(Application, back_populates="job", cascade="all, delete")
 
+    availability = Column(String)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
