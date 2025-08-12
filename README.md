@@ -97,7 +97,7 @@ Sample endpoints:
 
 ```bash
 git clone https://github.com/kimenyu/jobplatform-fastapi.git
-cd jobplatformfastapi
+cd jobplatform-fastapi
 python -m venv env
 source env/bin/activate
 pip install -r requirements.txt
