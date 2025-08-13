@@ -4,4 +4,5 @@ jobboard.db
 uploads/resumes/
 __pycache__/
 *.pyc
-env
+envclient_secret_*.json
+client_secret_552955970175-son8qnm3109a7t2nrkppa10u3jvf1eov.apps.googleusercontent.com.json
