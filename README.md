@@ -108,6 +108,9 @@ Create a `.env` file:
 ```env
 OPENAI_API_KEY=your_openai_key
 SECRET_KEY=your_jwt_secret
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_REDIRECT_URI=http://localhost:8000/auth/callback
 ```
 
 Run the application:

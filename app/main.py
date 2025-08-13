@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from dotenv import load_dotenv
+from starlette.middleware.sessions import SessionMiddleware
 
 # Routers
 from app.api import auth
@@ -80,6 +81,10 @@ app = FastAPI(
 
 # Middlewares
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SECRET_KEY", "your-secret-key-here")  # Use a strong secret key
+)
 
 # Startup hooks
 @app.on_event("startup")
@@ -88,7 +93,7 @@ async def on_startup():
     log.info("app.startup.complete")
 
 
-@app.get("/")
+@app.get("/test")
 async def home():
     return {"message": "It is working"}
 
