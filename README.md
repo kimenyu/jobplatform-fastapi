@@ -73,7 +73,7 @@ This platform integrates **OpenAI's GPT API** to parse and understand resumes us
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 app/
@@ -93,7 +93,7 @@ app/
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Authentication
 - `POST /auth/register` – Traditional user registration
@@ -248,7 +248,7 @@ alembic current
 
 ---
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
 - [ ] **Advanced AI matching** algorithm for job-candidate pairing
 - [ ] **Real-time notifications** with WebSocket support
@@ -261,7 +261,7 @@ alembic current
 
 ---
 
-## 👨‍💻 Author
+##  Author
 
 **Joseph Njoroge**  
 Full-stack Software Developer – Passionate about backend systems, AI-powered applications, and solving real-world problems with innovative technology.
@@ -274,13 +274,13 @@ Full-stack Software Developer – Passionate about backend systems, AI-powered a
 
 ---
 
-## 📄 License
+## License
 
 MIT License – Feel free to build upon this project and make it even better!
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
@@ -290,8 +290,3 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
----
-
-## ⭐ Show Your Support
-
-If this project helped you, please give it a ⭐ on GitHub!
