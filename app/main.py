@@ -64,7 +64,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
 async def identifier(request: Request) -> str:
 
-    user_id = request.headers.get("x-user-id")  # example placeholder
+    user_id = request.headers.get("x-user-id")
     if user_id:
         return f"user:{user_id}"
     ip = request.headers.get("x-forwarded-for", request.client.host)
@@ -79,14 +79,14 @@ app = FastAPI(
     dependencies=[Depends(RateLimiter(times=120, seconds=60))]
 )
 
-# Middlewares
+# middlewares
 app.add_middleware(LoggingMiddleware)
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SECRET_KEY", "your-secret-key-here")  # Use a strong secret key
+    secret_key=os.getenv("SECRET_KEY") 
 )
 
-# Startup hooks
+# startup hooks
 @app.on_event("startup")
 async def on_startup():
     await init_rate_limit()
