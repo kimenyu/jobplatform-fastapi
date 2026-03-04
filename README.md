@@ -1,84 +1,90 @@
 # JobPlatformFastAPI
 
-> An intelligent, full-featured job platform built with **FastAPI** that connects **applicants** and **employers**, powered by AI-driven resume parsing using **OpenAI's GPT**.
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-API-green)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
+![Redis](https://img.shields.io/badge/Redis-Cache-red)
+![Docker](https://img.shields.io/badge/Docker-Container-blue)
+![CI](https://img.shields.io/badge/CI-GitHub%20Actions-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+An **AI-powered job platform API** built with **FastAPI** that connects **applicants and employers** with intelligent resume analysis using **OpenAI GPT**.
 
 ---
 
-## Table of Contents
+## Architecture
 
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Run with Docker (Recommended)](#run-with-docker-recommended)
-  - [Run Locally (Without Docker)](#run-locally-without-docker)
-- [API Endpoints](#api-endpoints)
-- [Database Migrations](#database-migrations)
-- [Future Enhancements](#future-enhancements)
-- [Contributing](#contributing)
-- [Author](#author)
-- [License](#license)
+```
+                 +-------------------+
+                 |      Client       |
+                 | (Web / Mobile)    |
+                 +---------+---------+
+                           |
+                           v
+                    +-------------+
+                    |   FastAPI   |
+                    |   Backend   |
+                    +------+------+ 
+                           |
+          +----------------+----------------+
+          |                                 |
+          v                                 v
+   +-------------+                   +-------------+
+   | PostgreSQL  |                   |    Redis    |
+   |  Database   |                   | Rate Limit  |
+   +-------------+                   +-------------+
+                           |
+                           v
+                     +-----------+
+                     |  OpenAI   |
+                     | Resume AI |
+                     +-----------+
+```
 
 ---
 
 ## Features
 
 ### Authentication & Authorization
-
-- JWT-based login & registration
-- **Google OAuth 2.0** integration for seamless sign-in
-- Automatic user creation for new Google users
-- Role-based access control: **Admin**, **Employer**, **Applicant**
+- JWT authentication
+- Google OAuth login
+- Automatic user creation for OAuth users
+- Role-based access control (Admin, Employer, Applicant)
 
 ### Job Management
+- Employers: create/update/delete jobs, manage applicants
+- Applicants: browse jobs, apply with resume upload, track status
 
-- Employers can create, update, delete, and manage job listings
-- Applicants can browse and apply to jobs
-- Advanced job filtering and search capabilities
-
-### Resume Upload & AI Parsing
-
-Applicants upload resumes in `.docx` or `.pdf` format. A hybrid parsing approach is used:
-
-- **OpenAI GPT** for intelligent content extraction
-- `python-docx` and `pdfplumber` as fallback parsers
-
-Extracted insights include:
-
-- Skills & experience
-- Education & achievements
-- Career summary
-- Job–skill match recommendations
-
-### Application Tracking
-
-- Admins and employers can view and manage applications
-- Applicants track submission status in real time
-
-### Notifications
-
-- System-generated notifications for application events
-- Email integration for important updates
+### AI Resume Parsing
+- Resume formats: `.pdf`, `.docx`
+- Uses **OpenAI GPT** for structured extraction (skills, experience, education, summary)
+- Falls back to traditional parsing (`python-docx`, `pdfplumber`) where needed
 
 ### Reviews & Ratings
+- Users can review each other (1–5 stars)
 
-Users can leave reviews (1–5 stars) to build transparency and trust.
+### Migrations
+- Alembic migrations for schema changes
+
+### Rate Limiting
+- Redis-backed rate limiting (FastAPI Limiter)
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Backend | FastAPI (Python) |
+|------|-------------|
+| Backend | FastAPI |
 | ORM | SQLAlchemy |
 | Database | PostgreSQL |
 | Migrations | Alembic |
-| Authentication | JWT + OAuth2 + Google OAuth |
-| AI Integration | OpenAI GPT |
-| Resume Parsing | GPT + python-docx / pdfplumber |
+| Auth | JWT + Google OAuth |
+| AI | OpenAI |
+| Resume Parsing | python-docx, pdfplumber |
+| Rate Limiting | Redis + fastapi-limiter |
 | Containerization | Docker + Docker Compose |
-| Caching / Rate Limiting | Redis |
+| Logging | Structlog |
 
 ---
 
@@ -86,215 +92,207 @@ Users can leave reviews (1–5 stars) to build transparency and trust.
 
 ```
 jobplatformfastapi/
-│
 ├── app/
 │   ├── api/                # Authentication routes
 │   ├── core/               # Security utilities
-│   ├── database/           # Database session
+│   ├── database/           # DB session & engine
 │   ├── models/             # SQLAlchemy models
 │   ├── repository/         # Business logic layer
-│   ├── routes/             # API routes
+│   ├── routes/             # API endpoints
 │   ├── schemas/            # Pydantic schemas
-│   ├── uploads/            # Uploaded resume files
-│   ├── alembic/            # Database migrations
-│   ├── config/             # Logging and config
-│   └── main.py             # FastAPI entry point
-│
+│   ├── config/             # Logging configuration
+│   ├── utils/              # Helper utilities
+│   ├── uploads/            # Uploaded resumes
+│   └── main.py             # FastAPI entrypoint
+├── tests/
+├── .github/workflows/
 ├── Dockerfile
 ├── docker-compose.yml
+├── pyproject.toml
+├── .pre-commit-config.yaml
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Getting Started
+## Running the Project
 
-### Run with Docker (Recommended)
+### Running with Docker (Recommended)
 
-Docker automatically starts the FastAPI server, PostgreSQL, and Redis.
+Docker starts:
+- FastAPI API
+- PostgreSQL
+- Redis
+- One-time migration service (Alembic)
 
-**1. Clone the repository**
-
+#### 1) Clone
 ```bash
 git clone https://github.com/kimenyu/jobplatform-fastapi.git
 cd jobplatform-fastapi
 ```
 
-**2. Create a `.env` file**
-
-```env
-# Database
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=jobboard
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
-DATABASE_URL=postgresql://postgres:postgres@db:5432/jobboard
-
-# Redis
-REDIS_URL=redis://redis:6379/0
-
-# JWT
-SECRET_KEY=your_super_secure_jwt_secret_key_here
-
-# OpenAI
-OPENAI_API_KEY=your_openai_api_key
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:8000/auth/callback
+#### 2) Create `.env`
+Use `.env.example` as a template:
+```bash
+cp .env.example .env
 ```
 
-**3. Build and start the containers**
+Update values in `.env` (OpenAI key, Google OAuth, SECRET_KEY).
 
+#### 3) Start services
 ```bash
 docker compose up --build
 ```
 
-**4. Access the application**
+#### 4) URLs
+- API: `http://localhost:8000`
+- Docs: `http://localhost:8000/docs`
+- Health: `http://localhost:8000/health`
 
-| Service | URL |
-|---|---|
-| API | http://localhost:8000 |
-| Swagger Docs | http://localhost:8000/docs |
-
-**5. Stop containers**
-
+#### 5) Stop
 ```bash
 docker compose down
 ```
 
+> Note: Postgres is mapped to host port **5433** to avoid conflicts with local Postgres.
+> Container-to-container connections still use `db:5432`.
+
 ---
 
-### Run Locally (Without Docker)
+### Running Locally (Without Docker)
 
-
-**1. Create and activate a virtual environment**
-
+#### 1) Virtualenv
 ```bash
 python -m venv env
-source env/bin/activate       # macOS/Linux
-env\Scripts\activate          # Windows
-```
-
-**2. Install dependencies**
-
-```bash
+source env/bin/activate
 pip install -r requirements.txt
 ```
 
-**3. Start PostgreSQL and Redis locally**
+#### 2) Start dependencies
+Make sure **PostgreSQL** and **Redis** are running locally.
 
-Ensure both services are running on your machine before proceeding.
-
-**4. Configure `.env`**
-
+#### 3) Configure `.env`
+Example:
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/jobboard
 REDIS_URL=redis://localhost:6379/0
-SECRET_KEY=your_secret_key
-OPENAI_API_KEY=your_openai_key
+SECRET_KEY=change_me
+ENABLE_RATE_LIMIT=false
 ```
 
-**5. Run database migrations**
-
+#### 4) Run migrations
 ```bash
 alembic upgrade head
 ```
 
-**6. Start the server**
-
+#### 5) Start server
 ```bash
-# Development
 uvicorn app.main:app --reload
-
-# Production
-gunicorn -k uvicorn.workers.UvicornWorker app.main:app
 ```
 
 ---
 
-## API Endpoints
+## API Examples
 
-### Authentication
+### Register
+`POST /auth/register`
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/register` | Register a new user |
-| POST | `/auth/login/user` | Email/password login |
-| GET | `/auth/login` | Initiate Google OAuth login |
-| GET | `/auth/callback` | Google OAuth callback |
-| GET | `/auth/protected` | Test protected endpoint |
-
-### Jobs & Applications
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/jobs/create` | Create a job listing |
-| GET | `/jobs/all` | List all jobs |
-| POST | `/applications/submit` | Apply for a job |
-| GET | `/applications/{id}` | Get application details |
-
-### Reviews
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/reviews` | Submit a review |
+### Login
+`POST /auth/login/user`
+```json
+{
+  "access_token": "jwt_token_here",
+  "token_type": "bearer"
+}
+```
 
 ---
 
-## Database Migrations
+## Formatting, Linting, and Hooks
 
-Alembic manages all schema changes.
+This repo supports:
+- **Ruff** (lint + import sorting)
+- **Black** (formatting)
+- **Pytest** (tests)
+- **Pre-commit hooks** (runs checks before commits)
 
+### Install dev tools
 ```bash
-# Create a new migration
-alembic revision --autogenerate -m "Add table"
+pip install -r requirements.txt
+pip install -e ".[dev]"
+pre-commit install
+```
 
-# Apply all pending migrations
+### Run checks manually
+```bash
+ruff check .
+black --check .
+pytest -q
+```
+
+### Auto-fix
+```bash
+ruff check . --fix
+black .
+```
+
+---
+
+## Database Migrations (Alembic)
+
+Create migration:
+```bash
+alembic revision --autogenerate -m "add table"
+```
+
+Apply:
+```bash
 alembic upgrade head
+```
 
-# Rollback one migration
+Rollback:
+```bash
 alembic downgrade -1
 ```
 
 ---
 
-## Future Enhancements
+## CI
 
-- AI-powered job matching
-- Real-time notifications via WebSockets
-- Email notification system
-- Admin analytics dashboard
-- Multi-language support
-- Video interview scheduling
-- Skills testing platform
+GitHub Actions runs:
+- Postgres + Redis services
+- Alembic migrations
+- Pytest
+
+Workflow file:
+- `.github/workflows/ci.yml`
 
 ---
 
-## Contributing
-
-Contributions are welcome!
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-feature`
-3. Commit your changes: `git commit -m "Add new feature"`
-4. Push to the branch: `git push origin feature/new-feature`
-5. Open a Pull Request
+## Roadmap
+- AI job recommendations
+- Real-time notifications (WebSockets)
+- Admin analytics dashboard
+- Interview scheduling
 
 ---
 
 ## Author
 
-**Joseph Njoroge** — Backend / Full-Stack Software Engineer focused on scalable backend systems and AI-powered platforms.
+**Joseph Njoroge**  
+Backend Software Engineer focused on scalable backend systems and AI-powered platforms.
 
-- GitHub: [github.com/kimenyu](https://github.com/kimenyu)
-- Email: [njorogekimenyu@gmail.com](mailto:njorogekimenyu@gmail.com)
+- GitHub: https://github.com/kimenyu  
+- Email: njorogekimenyu@gmail.com
 
 ---
 
 ## License
-
-This project is licensed under the [MIT License](LICENSE).
+MIT

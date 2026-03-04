@@ -22,11 +22,12 @@ import structlog.contextvars
 import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
-
+from sqlalchemy import text
 load_dotenv()
 
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
+
 
 configure_logging()
 log = structlog.get_logger()
@@ -85,6 +86,28 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SECRET_KEY") 
 )
+
+@app.get("/health")
+async def health():
+    # DB check (sync SQLAlchemy engine)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        db_ok = False
+
+    # Redis check
+    redis_ok = True
+    try:
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        r = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
+        await r.ping()
+    except Exception:
+        redis_ok = False
+
+    status = "ok" if db_ok and redis_ok else "degraded"
+    return {"status": status, "postgres": db_ok, "redis": redis_ok}
 
 # startup hooks
 @app.on_event("startup")
