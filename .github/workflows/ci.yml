@@ -50,7 +50,7 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           SECRET_KEY: testsecret
           ENABLE_RATE_LIMIT: "false"
-        run: alembic upgrade head
+        run: alembic -c app/alembic.ini upgrade head
 
       - name: Run tests
         env:
