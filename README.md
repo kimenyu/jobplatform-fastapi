@@ -1,112 +1,90 @@
-```markdown
 # JobPlatformFastAPI
 
-An intelligent, full-featured job platform built with **FastAPI** that connects **applicants** and **employers**, powered by AI-driven resume parsing using **OpenAI's GPT**. It features robust role-based authentication with **Google OAuth**, job posting, application management, resume analysis, notifications, and user reviews.
+> An intelligent, full-featured job platform built with **FastAPI** that connects **applicants** and **employers**, powered by AI-driven resume parsing using **OpenAI's GPT**.
 
 ---
 
-# Features
+## Table of Contents
 
-## Authentication & Authorization
-
-- **Multiple Login Options**
-  - Traditional JWT-based login & registration
-  - **Google OAuth 2.0 integration** for seamless sign-in
-  - Automatic user creation for new Google users
-- **Role-specific access** (Admin, Employer, Applicant)
-- **Secure token-based authentication**
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Run with Docker (Recommended)](#run-with-docker-recommended)
+  - [Run Locally (Without Docker)](#run-locally-without-docker)
+- [API Endpoints](#api-endpoints)
+- [Database Migrations](#database-migrations)
+- [Future Enhancements](#future-enhancements)
+- [Contributing](#contributing)
+- [Author](#author)
+- [License](#license)
 
 ---
 
-## Job Management
+## Features
 
-- Employers can create, update, delete, and manage jobs
+### Authentication & Authorization
+
+- JWT-based login & registration
+- **Google OAuth 2.0** integration for seamless sign-in
+- Automatic user creation for new Google users
+- Role-based access control: **Admin**, **Employer**, **Applicant**
+
+### Job Management
+
+- Employers can create, update, delete, and manage job listings
 - Applicants can browse and apply to jobs
 - Advanced job filtering and search capabilities
 
----
+### Resume Upload & AI Parsing
 
-## Resume Upload & AI Parsing
-
-Applicants upload resumes in `.docx` or `.pdf` formats.
-
-Hybrid parsing approach:
+Applicants upload resumes in `.docx` or `.pdf` format. A hybrid parsing approach is used:
 
 - **OpenAI GPT** for intelligent content extraction
-- Traditional parsing using `python-docx` and `pdfplumber` as fallback
+- `python-docx` and `pdfplumber` as fallback parsers
 
 Extracted insights include:
 
-- Skills
-- Experience
-- Education
+- Skills & experience
+- Education & achievements
 - Career summary
-- Achievements
+- Job–skill match recommendations
 
----
+### Application Tracking
 
-## Application Tracking
+- Admins and employers can view and manage applications
+- Applicants track submission status in real time
 
-- Admins and employers can view applications
-- Applicants track submission status
-- Real-time application status updates
-
----
-
-## Notifications
+### Notifications
 
 - System-generated notifications for application events
 - Email integration for important updates
 
----
+### Reviews & Ratings
 
-## Reviews & Ratings
-
-Users can leave reviews (1–5 stars) to build transparency and trust on the platform.
+Users can leave reviews (1–5 stars) to build transparency and trust.
 
 ---
 
-## Database Management
-
-- **Alembic migrations** for schema updates
-- SQLAlchemy ORM for robust data modeling
-
----
-
-# Powered by AI
-
-The platform integrates **OpenAI GPT** to analyze resumes using natural language understanding.
-
-It generates insights such as:
-
-- Experience level assessment
-- Skill proficiency evaluation
-- Career summary generation
-- Education and achievements extraction
-- Job–skill matching recommendations
-
----
-
-# Tech Stack
+## Tech Stack
 
 | Layer | Technology |
-|------|------------|
+|---|---|
 | Backend | FastAPI (Python) |
 | ORM | SQLAlchemy |
 | Database | PostgreSQL |
 | Migrations | Alembic |
 | Authentication | JWT + OAuth2 + Google OAuth |
-| AI Integration | OpenAI |
+| AI Integration | OpenAI GPT |
 | Resume Parsing | GPT + python-docx / pdfplumber |
 | Containerization | Docker + Docker Compose |
 | Caching / Rate Limiting | Redis |
 
 ---
 
-# Project Structure
+## Project Structure
 
 ```
-
 jobplatformfastapi/
 │
 ├── app/
@@ -126,37 +104,24 @@ jobplatformfastapi/
 ├── docker-compose.yml
 ├── requirements.txt
 └── README.md
-
-````
-
----
-
-# Running the Project
-
-The project can be run **using Docker (recommended)** or **locally without Docker**.
+```
 
 ---
 
-# Run With Docker (Recommended)
+## Getting Started
 
-Docker will automatically start:
+### Run with Docker (Recommended)
 
-- FastAPI API server
-- PostgreSQL database
-- Redis (for rate limiting)
+Docker automatically starts the FastAPI server, PostgreSQL, and Redis.
 
-### 1 Clone the repository
+**1. Clone the repository**
 
 ```bash
 git clone https://github.com/kimenyu/jobplatform-fastapi.git
 cd jobplatform-fastapi
-````
+```
 
----
-
-### 2 Create `.env` file
-
-Create a `.env` file in the root directory:
+**2. Create a `.env` file**
 
 ```env
 # Database
@@ -165,7 +130,6 @@ POSTGRES_PASSWORD=postgres
 POSTGRES_DB=jobboard
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
-
 DATABASE_URL=postgresql://postgres:postgres@db:5432/jobboard
 
 # Redis
@@ -183,39 +147,20 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/callback
 ```
 
----
-
-### 3 Build and start the containers
+**3. Build and start the containers**
 
 ```bash
 docker compose up --build
 ```
 
-This will start:
+**4. Access the application**
 
-* FastAPI API server
-* PostgreSQL database
-* Redis cache
+| Service | URL |
+|---|---|
+| API | http://localhost:8000 |
+| Swagger Docs | http://localhost:8000/docs |
 
----
-
-### 4 Access the application
-
-API:
-
-```
-http://localhost:8000
-```
-
-Swagger Docs:
-
-```
-http://localhost:8000/docs
-```
-
----
-
-### 5 Stop containers
+**5. Stop containers**
 
 ```bash
 docker compose down
@@ -223,45 +168,28 @@ docker compose down
 
 ---
 
-# Running Without Docker (Local Development)
+### Run Locally (Without Docker)
 
-### 1 Create virtual environment
+
+**1. Create and activate a virtual environment**
 
 ```bash
 python -m venv env
-source env/bin/activate
+source env/bin/activate       # macOS/Linux
+env\Scripts\activate          # Windows
 ```
 
-Windows:
-
-```
-env\Scripts\activate
-```
-
----
-
-### 2 Install dependencies
+**2. Install dependencies**
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
+**3. Start PostgreSQL and Redis locally**
 
-### 3 Start PostgreSQL and Redis
+Ensure both services are running on your machine before proceeding.
 
-Make sure the following services are running locally:
-
-```
-PostgreSQL
-Redis
-```
-
----
-
-### 4 Configure `.env`
-
-Example:
+**4. Configure `.env`**
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/jobboard
@@ -270,149 +198,103 @@ SECRET_KEY=your_secret_key
 OPENAI_API_KEY=your_openai_key
 ```
 
----
-
-### 5 Run database migrations
+**5. Run database migrations**
 
 ```bash
 alembic upgrade head
 ```
 
----
-
-### 6 Start FastAPI
-
-Development:
+**6. Start the server**
 
 ```bash
+# Development
 uvicorn app.main:app --reload
-```
 
-Production:
-
-```bash
+# Production
 gunicorn -k uvicorn.workers.UvicornWorker app.main:app
 ```
 
 ---
 
-# API Endpoints
+## API Endpoints
 
-## Authentication
+### Authentication
 
-| Method | Endpoint           | Description             |
-| ------ | ------------------ | ----------------------- |
-| POST   | `/auth/register`   | Register new user       |
-| POST   | `/auth/login/user` | Email/password login    |
-| GET    | `/auth/login`      | Google OAuth login      |
-| GET    | `/auth/callback`   | Google OAuth callback   |
-| GET    | `/auth/protected`  | Test protected endpoint |
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login/user` | Email/password login |
+| GET | `/auth/login` | Initiate Google OAuth login |
+| GET | `/auth/callback` | Google OAuth callback |
+| GET | `/auth/protected` | Test protected endpoint |
 
----
+### Jobs & Applications
 
-## Jobs & Applications
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/jobs/create` | Create a job listing |
+| GET | `/jobs/all` | List all jobs |
+| POST | `/applications/submit` | Apply for a job |
+| GET | `/applications/{id}` | Get application details |
 
-| Method | Endpoint               | Description         |
-| ------ | ---------------------- | ------------------- |
-| POST   | `/jobs/create`         | Create job          |
-| GET    | `/jobs/all`            | List jobs           |
-| POST   | `/applications/submit` | Apply for job       |
-| GET    | `/applications/{id}`   | Application details |
+### Reviews
 
----
-
-## Reviews
-
-| Method | Endpoint   | Description   |
-| ------ | ---------- | ------------- |
-| POST   | `/reviews` | Submit review |
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/reviews` | Submit a review |
 
 ---
 
-# Database Migrations
+## Database Migrations
 
-Alembic manages schema changes.
-
-Create migration:
+Alembic manages all schema changes.
 
 ```bash
+# Create a new migration
 alembic revision --autogenerate -m "Add table"
-```
 
-Apply migration:
-
-```bash
+# Apply all pending migrations
 alembic upgrade head
-```
 
-Rollback:
-
-```bash
+# Rollback one migration
 alembic downgrade -1
 ```
 
 ---
 
-# Future Enhancements
+## Future Enhancements
 
-* AI-powered job matching
-* Real-time notifications using WebSockets
-* Email notification system
-* Admin analytics dashboard
-* Multi-language support
-* Video interview scheduling
-* Skills testing platform
-
----
-
-# Author
-
-**Joseph Njoroge**
-
-Backend / Full-Stack Software Engineer focused on building scalable backend systems and AI-powered platforms.
-
-GitHub
-[https://github.com/kimenyu](https://github.com/kimenyu)
-
-Email
-[njorogekimenyu@gmail.com](mailto:njorogekimenyu@gmail.com)
+- AI-powered job matching
+- Real-time notifications via WebSockets
+- Email notification system
+- Admin analytics dashboard
+- Multi-language support
+- Video interview scheduling
+- Skills testing platform
 
 ---
 
-# License
+## Contributing
 
-MIT License
+Contributions are welcome!
 
----
-
-# Contributing
-
-Contributions are welcome.
-
-1 Fork the repository
-2 Create a feature branch
-
-```
-git checkout -b feature/new-feature
-```
-
-3 Commit changes
-
-```
-git commit -m "Add new feature"
-```
-
-4 Push branch
-
-```
-git push origin feature/new-feature
-```
-
-5 Open Pull Request
-
-```
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Commit your changes: `git commit -m "Add new feature"`
+4. Push to the branch: `git push origin feature/new-feature`
+5. Open a Pull Request
 
 ---
 
-If you'd like, I can also help you **improve this README to a “senior-level GitHub project” standard** (with badges, architecture diagram, API examples, screenshots, and deployment instructions).
-```
+## Author
+
+**Joseph Njoroge** — Backend / Full-Stack Software Engineer focused on scalable backend systems and AI-powered platforms.
+
+- GitHub: [github.com/kimenyu](https://github.com/kimenyu)
+- Email: [njorogekimenyu@gmail.com](mailto:njorogekimenyu@gmail.com)
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
