@@ -72,9 +72,14 @@ async def identifier(request: Request) -> str:
     return f"ip:{ip}"
 
 async def init_rate_limit():
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    redis_url = os.getenv("REDIS_URL", "rediss://localhost:6379/0")  # rediss:// with SSL
     r = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
     await FastAPILimiter.init(r, identifier=identifier)
+    
+# async def init_rate_limit():
+#     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+#     r = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
+#     await FastAPILimiter.init(r, identifier=identifier)
 
 app = FastAPI(
     dependencies=[Depends(RateLimiter(times=120, seconds=60))]
@@ -100,7 +105,8 @@ async def health():
     # Redis check
     redis_ok = True
     try:
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        # redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        redis_url = os.getenv("REDIS_URL", "rediss://localhost:6379/0")
         r = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
         await r.ping()
     except Exception:

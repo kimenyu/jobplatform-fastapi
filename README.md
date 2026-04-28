@@ -2,8 +2,8 @@
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-API-green)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
-![Redis](https://img.shields.io/badge/Redis-Cache-red)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-blue)
+![Redis](https://img.shields.io/badge/Redis-Upstash-red)
 ![Docker](https://img.shields.io/badge/Docker-Container-blue)
 ![CI](https://img.shields.io/badge/CI-GitHub%20Actions-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -24,14 +24,15 @@ An **AI-powered job platform API** built with **FastAPI** that connects **applic
                     +-------------+
                     |   FastAPI   |
                     |   Backend   |
-                    +------+------+ 
+                    +------+------+
                            |
           +----------------+----------------+
           |                                 |
           v                                 v
    +-------------+                   +-------------+
-   | PostgreSQL  |                   |    Redis    |
-   |  Database   |                   | Rate Limit  |
+   |    Neon     |                   |   Upstash   |
+   |  PostgreSQL |                   | Redis (TLS) |
+   | (Serverless)|                   | Rate Limit  |
    +-------------+                   +-------------+
                            |
                            v
@@ -64,25 +65,25 @@ An **AI-powered job platform API** built with **FastAPI** that connects **applic
 - Users can review each other (1–5 stars)
 
 ### Migrations
-- Alembic migrations for schema changes
+- Alembic migrations for schema changes against Neon PostgreSQL
 
 ### Rate Limiting
-- Redis-backed rate limiting (FastAPI Limiter)
+- Upstash Redis-backed rate limiting over TLS (FastAPI Limiter)
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|------|-------------|
+|---|---|
 | Backend | FastAPI |
-| ORM | SQLAlchemy |
-| Database | PostgreSQL |
+| ORM | SQLAlchemy + psycopg2 |
+| Database | Neon PostgreSQL (serverless) |
 | Migrations | Alembic |
 | Auth | JWT + Google OAuth |
 | AI | OpenAI |
 | Resume Parsing | python-docx, pdfplumber |
-| Rate Limiting | Redis + fastapi-limiter |
+| Rate Limiting | Upstash Redis + fastapi-limiter |
 | Containerization | Docker + Docker Compose |
 | Logging | Structlog |
 
@@ -94,13 +95,14 @@ An **AI-powered job platform API** built with **FastAPI** that connects **applic
 jobplatformfastapi/
 ├── app/
 │   ├── api/                # Authentication routes
+│   ├── config/             # Gunicorn + logging config
 │   ├── core/               # Security utilities
 │   ├── database/           # DB session & engine
 │   ├── models/             # SQLAlchemy models
 │   ├── repository/         # Business logic layer
 │   ├── routes/             # API endpoints
 │   ├── schemas/            # Pydantic schemas
-│   ├── config/             # Logging configuration
+│   ├── alembic/            # Migration scripts
 │   ├── utils/              # Helper utilities
 │   ├── uploads/            # Uploaded resumes
 │   └── main.py             # FastAPI entrypoint
@@ -108,88 +110,205 @@ jobplatformfastapi/
 ├── .github/workflows/
 ├── Dockerfile
 ├── docker-compose.yml
-├── pyproject.toml
-├── .pre-commit-config.yaml
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Running the Project
+## Environment Variables
 
-### Running with Docker (Recommended)
+Create a `.env` file at the project root. Use `.env.example` as a template:
 
-Docker starts:
-- FastAPI API
-- PostgreSQL
-- Redis
-- One-time migration service (Alembic)
+```bash
+cp .env.example .env
+```
 
-#### 1) Clone
+Required variables:
+
+```dotenv
+# Neon PostgreSQL — get from console.neon.tech
+DATABASE_URL=postgresql+psycopg2://neondb_owner:YOUR_PASSWORD@ep-xxx.neon.tech/neondb?sslmode=require
+
+# Upstash Redis — get from console.upstash.com (note: rediss:// with double s for TLS)
+REDIS_URL=rediss://default:YOUR_TOKEN@your-instance.upstash.io:6379
+
+# App secret
+SECRET_KEY=your-random-secret-key
+```
+
+> **Never commit `.env` to git.** It is listed in `.gitignore`.
+
+---
+
+## Running with Docker (Recommended)
+
+Docker runs the API only. Database (Neon) and Redis (Upstash) are external cloud services — no local containers needed for them.
+
+### 1) Clone
+
 ```bash
 git clone https://github.com/kimenyu/jobplatform-fastapi.git
 cd jobplatform-fastapi
 ```
 
-#### 2) Create `.env`
-Use `.env.example` as a template:
+### 2) Configure `.env`
+
 ```bash
 cp .env.example .env
+# Fill in DATABASE_URL, REDIS_URL, SECRET_KEY
 ```
 
-Update values in `.env` (OpenAI key, Google OAuth, SECRET_KEY).
+### 3) Build and start
 
-#### 3) Start services
 ```bash
 docker compose up --build
 ```
 
-#### 4) URLs
+### 4) Run migrations (first time only)
+
+In a separate terminal while the container is running:
+
+```bash
+docker compose run --rm api alembic -c app/alembic.ini upgrade head
+```
+
+### 5) URLs
+
 - API: `http://localhost:8000`
 - Docs: `http://localhost:8000/docs`
 - Health: `http://localhost:8000/health`
 
-#### 5) Stop
+### 6) Stop
+
 ```bash
 docker compose down
 ```
 
-> Note: Postgres is mapped to host port **5433** to avoid conflicts with local Postgres.
-> Container-to-container connections still use `db:5432`.
-
 ---
 
-### Running Locally (Without Docker)
+## Running Locally (Without Docker)
 
-#### 1) Virtualenv
+### 1) Virtualenv
+
 ```bash
 python -m venv env
 source env/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 2) Start dependencies
-Make sure **PostgreSQL** and **Redis** are running locally.
+### 2) Configure `.env`
 
-#### 3) Configure `.env`
-Example:
-```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/jobboard
-REDIS_URL=redis://localhost:6379/0
-SECRET_KEY=change_me
-ENABLE_RATE_LIMIT=false
+```dotenv
+DATABASE_URL=postgresql+psycopg2://neondb_owner:YOUR_PASSWORD@ep-xxx.neon.tech/neondb?sslmode=require
+REDIS_URL=rediss://default:YOUR_TOKEN@your-instance.upstash.io:6379
+SECRET_KEY=your-secret-key
 ```
 
-#### 4) Run migrations
+### 3) Run migrations
+
 ```bash
-alembic upgrade head
+cd app
+alembic -c alembic.ini upgrade head
 ```
 
-#### 5) Start server
+### 4) Start server
+
 ```bash
 uvicorn app.main:app --reload
 ```
+
+---
+
+## Database Migrations (Alembic)
+
+Migrations run against Neon PostgreSQL using the `DATABASE_URL` from your `.env`.
+
+**Generate a new migration after model changes:**
+
+```bash
+docker compose run --rm api alembic -c app/alembic.ini revision --autogenerate -m "describe your change"
+```
+
+**Apply migrations:**
+
+```bash
+docker compose run --rm api alembic -c app/alembic.ini upgrade head
+```
+
+**Check current state:**
+
+```bash
+docker compose run --rm api alembic -c app/alembic.ini current
+```
+
+**Rollback one step:**
+
+```bash
+docker compose run --rm api alembic -c app/alembic.ini downgrade -1
+```
+
+> The `docker-compose.yml` includes a volume mount (`. :/code`) so generated migration files are written back to your local filesystem.
+
+---
+
+## Deploying to Render
+
+### Method A — Without Docker (Recommended)
+
+**1. Push to GitHub**
+
+Make sure `.gitignore` includes:
+```
+.env
+jobboard.db
+uploads/
+client_secret_*.json
+```
+
+```bash
+git add .
+git commit -m "your commit message"
+git push origin main
+```
+
+**2. Create a Web Service on Render**
+
+- Go to [render.com](https://render.com) → New → Web Service
+- Connect your GitHub repo
+- Set:
+
+| Field | Value |
+|---|---|
+| Runtime | Python 3 |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `gunicorn -k uvicorn.workers.UvicornWorker -c app/config/gunicorn_conf.py app.main:app` |
+
+**3. Add environment variables in Render dashboard**
+
+```
+DATABASE_URL=postgresql+psycopg2://...neon.tech/neondb?sslmode=require
+REDIS_URL=rediss://...upstash.io:6379
+SECRET_KEY=your-secret-key
+```
+
+**4. Run migrations after first deploy**
+
+In Render dashboard → your service → Shell tab:
+
+```bash
+alembic -c app/alembic.ini upgrade head
+```
+
+Render auto-deploys on every `git push` to `main` after this.
+
+### Method B — With Docker
+
+- Go to Render → New → Web Service → connect repo
+- Set **Runtime** to **Docker**
+- Render auto-detects the `Dockerfile`
+- Add the same 3 environment variables
+- Run migrations via the Shell tab after first deploy
 
 ---
 
@@ -217,66 +336,34 @@ uvicorn app.main:app --reload
 
 ## Formatting, Linting, and Hooks
 
-This repo supports:
-- **Ruff** (lint + import sorting)
-- **Black** (formatting)
-- **Pytest** (tests)
-- **Pre-commit hooks** (runs checks before commits)
-
-### Install dev tools
 ```bash
-pip install -r requirements.txt
 pip install -e ".[dev]"
 pre-commit install
-```
 
-### Run checks manually
-```bash
+# Run checks
 ruff check .
 black --check .
 pytest -q
-```
 
-### Auto-fix
-```bash
+# Auto-fix
 ruff check . --fix
 black .
 ```
 
 ---
 
-## Database Migrations (Alembic)
-
-Create migration:
-```bash
-alembic revision --autogenerate -m "add table"
-```
-
-Apply:
-```bash
-alembic upgrade head
-```
-
-Rollback:
-```bash
-alembic downgrade -1
-```
-
----
-
 ## CI
 
-GitHub Actions runs:
-- Postgres + Redis services
+GitHub Actions runs on every push:
 - Alembic migrations
 - Pytest
 
-Workflow file:
-- `.github/workflows/ci.yml`
+Workflow: `.github/workflows/ci.yml`
 
 ---
 
 ## Roadmap
+
 - AI job recommendations
 - Real-time notifications (WebSockets)
 - Admin analytics dashboard
@@ -286,13 +373,14 @@ Workflow file:
 
 ## Author
 
-**Joseph Njoroge**  
+**Joseph Njoroge**
 Backend Software Engineer focused on scalable backend systems and AI-powered platforms.
 
-- GitHub: https://github.com/kimenyu  
+- GitHub: https://github.com/kimenyu
 - Email: njorogekimenyu@gmail.com
 
 ---
 
 ## License
+
 MIT

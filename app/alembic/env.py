@@ -7,14 +7,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 
 from app.database.base import Base
-from app.models import *
+from app.models import user, job, application, review, userprofile, resume, savedjob, notification
 from app.database import session
 
 # this is the Alembic Config object
 config = context.config
 
 # set database URL from settings
-config.set_main_option("sqlalchemy.url", session.SQLALCHEMY_DATABASE_URL)
+config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 
 # Interpret config file for Python logging
 if config.config_file_name is not None:
